@@ -73,6 +73,12 @@ def create_command_trie():
     return trie
 
 
+def display_matches(substitution, matches, longest_match_length):
+    matches = "  ".join(matches)
+    print()
+    print(matches, end=f"\n$ {substitution}")
+
+
 def completer(text, state):
     options = COMMAND_TRIE.starts_with(text)
     if len(options) == 1:
@@ -90,6 +96,7 @@ def main():
     COMMAND_TRIE = create_command_trie()
     readline.set_completer_delims(" ")
     readline.set_completer(completer)
+    readline.set_completion_display_matches_hook(display_matches)
     readline.parse_and_bind("tab: complete")
 
     while True:
