@@ -1,41 +1,124 @@
 import sys
 import os
+import readline
+
+PATH_SEP = os.pathsep
+PATH = os.environ.get("PATH", "")
+
+BUILTINS = {"exit": "builtin", "type": "builtin", "echo": "builtin"}
+COMMAND_TRIE = None
+
+
+class TrieChar:
+    def __init__(self):
+        self.children = {}
+        self.is_end_of_word = False
+        self.value = None
+
+    def insert(self, word, value):
+        current_node = self
+        for char in word:
+            if char not in current_node.children:
+                current_node.children[char] = TrieChar()
+            current_node = current_node.children[char]
+        current_node.is_end_of_word = True
+        current_node.value = value
+
+    def search(self, word):
+        current_node = self
+        for char in word:
+            if char not in current_node.children:
+                return None
+            current_node = current_node.children[char]
+        if current_node.is_end_of_word:
+            return current_node.value
+        return None
+
+    def starts_with(self, prefix):
+        current_node = self
+        for char in prefix:
+            if char not in current_node.children:
+                return []
+            current_node = current_node.children[char]
+        return self._elements_with_prefix(current_node, prefix)
+
+    def _elements_with_prefix(self, node, prefix):
+        results = []
+        if node.is_end_of_word:
+            results.append(prefix)
+        for char, next_node in node.children.items():
+            results.extend(self._elements_with_prefix(next_node, prefix + char))
+        return results
+
+
+def populate_builtins_from_path(path):
+    path = [p for p in path.split(PATH_SEP) if p]
+    for current_path in path:
+        files = []
+        if os.path.exists(current_path):
+            files = (
+                file
+                for file in os.listdir(current_path)
+                if os.path.isfile(os.path.join(current_path, file))
+            )
+        for file in files:
+            if file not in BUILTINS:
+                BUILTINS[file] = os.path.join(current_path, file)
+
+
+def create_command_trie():
+    trie = TrieChar()
+    for key, value in BUILTINS.items():
+        trie.insert(key, value)
+    return trie
+
+
+def completer(text, state):
+    options = COMMAND_TRIE.starts_with(text)
+    if len(options) == 1:
+        # If there is only one option, append a space to it
+        options[0] += " "
+    if state < len(options):
+        return options[state]
+    else:
+        return None
 
 
 def main():
-    PATH = os.environ.get("PATH", "")
+    global COMMAND_TRIE
+    populate_builtins_from_path(PATH)
+    COMMAND_TRIE = create_command_trie()
+    readline.set_completer_delims(" ")
+    readline.set_completer(completer)
+    readline.parse_and_bind("tab: complete")
+
     while True:
         sys.stdout.write("$ ")
-        command = input()
-        command_expand = command.split()
-        match command_expand[0]:
+        command_full = input()
+        if not command_full.strip():
+            continue
+        command, *params = command_full.split()
+        match command:
             case "exit":
                 break
             case "echo":
-                print(" ".join(command_expand[1:]))
+                print(*params)
             case "type":
-                match command_expand[1]:
-                    case "echo" | "exit" | "type":
-                        print(f"{command_expand[1]} is a shell builtin")
-                    case _:
-                        notFound = True
-                        for dir in PATH.split(":"):
-                            if os.path.exists(f"{dir}/{command_expand[1]}"):
-                                print(
-                                    f"{command_expand[1]} is {dir}/{command_expand[1]}"
-                                )
-                                notFound = False
-                                break
-                        if notFound:
-                            print(f"{command_expand[1]}: not found")
+                if not params:
+                    print("type: missing operand")
+                    continue
+                arg_command = params[0]
+                if arg_command in BUILTINS:
+                    if BUILTINS[arg_command] == "builtin":
+                        print(f"{arg_command} is a shell builtin")
+                    else:
+                        print(f"{arg_command} is {BUILTINS[arg_command]}")
+                else:
+                    print(f"{arg_command}: not found")
             case _:
-                notFound = True
-                for dir in PATH.split(":"):
-                    if os.path.exists(f"{dir}/{command_expand[0]}"):
-                        os.system(f"{command}")
-                        notFound = False
-                        break
-                if notFound:
+                if command in BUILTINS:
+                    os.system(command_full)
+                else:
                     print(f"{command}: command not found")
 
 
