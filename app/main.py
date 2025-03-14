@@ -5,7 +5,7 @@ import readline
 PATH_SEP = os.pathsep
 PATH = os.environ.get("PATH", "")
 
-BUILTINS = {"exit": "builtin", "type": "builtin", "echo": "builtin"}
+BUILTINS = {"exit": "builtin", "type": "builtin", "echo": "builtin", "pwd": "builtin"}
 COMMAND_TRIE = None
 
 
@@ -110,6 +110,8 @@ def main():
                 break
             case "echo":
                 print(*params)
+            case "pwd":
+                print(os.getcwd())
             case "type":
                 if not params:
                     print("type: missing operand")
