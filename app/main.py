@@ -122,6 +122,8 @@ def main():
                 if not params:
                     print("cd: missing operand")
                     continue
+                elif params[0].startswith("~"):
+                    params[0] = os.path.expanduser(params[0])
                 try:
                     os.chdir(params[0])
                 except FileNotFoundError:
