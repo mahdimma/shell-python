@@ -10,6 +10,12 @@ def main():
             break
         elif command_expand[0] == "echo":
             print(" ".join(command_expand[1:]))
+        elif command_expand[0] == "type":
+            match command_expand[1]:
+                case "echo" | "exit" | "type":
+                    print(f"{command_expand[1]} is a shell builtin")
+                case _:
+                    print(f"{command_expand[1]}: not found")
         else:
             print(f"{command}: command not found")
 
