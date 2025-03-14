@@ -5,7 +5,13 @@ import readline
 PATH_SEP = os.pathsep
 PATH = os.environ.get("PATH", "")
 
-BUILTINS = {"exit": "builtin", "type": "builtin", "echo": "builtin", "pwd": "builtin"}
+BUILTINS = {
+    "exit": "builtin",
+    "type": "builtin",
+    "echo": "builtin",
+    "pwd": "builtin",
+    "cd": "builtin",
+}
 COMMAND_TRIE = None
 
 
@@ -112,6 +118,14 @@ def main():
                 print(*params)
             case "pwd":
                 print(os.getcwd())
+            case "cd":
+                if not params:
+                    print("cd: missing operand")
+                    continue
+                try:
+                    os.chdir(params[0])
+                except FileNotFoundError:
+                    print(f"cd: {params[0]}: No such file or directory")
             case "type":
                 if not params:
                     print("type: missing operand")
