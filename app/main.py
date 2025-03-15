@@ -97,6 +97,32 @@ def completer(text, state):
         return None
 
 
+def command_parser(command_full):
+    append = command_full.find(">>")
+    redirection = command_full.find(">")
+    output_file = None
+    error = False
+    if append != -1:
+        state = 2
+        error = True if command_full[append - 1] == "2" else False
+        command_full = command_full[: append - 1] + command_full[append:]
+        command, output_file = command_full.split(">>")
+        command = command.strip()
+        output_file = output_file.strip()
+    elif redirection != -1:
+        state = 1
+        error = True if command_full[redirection - 1] == "2" else False
+        command_full = command_full[: redirection - 1] + command_full[redirection:]
+        command, output_file = command_full.split(">")
+        command = command.strip()
+        output_file = output_file.strip()
+    else:
+        state = 0
+        command = command_full
+    command, *params = command.split()
+    return command, output_file, state, error, *params
+
+
 def main():
     global COMMAND_TRIE
     populate_builtins_from_path(PATH)
@@ -111,12 +137,35 @@ def main():
         command_full = input()
         if not command_full.strip():
             continue
-        command, *params = command_full.split()
+        command, output_file, state, error_write, *params = command_parser(command_full)
+        output_write = ""
         match command:
             case "exit":
                 break
-            case "echo":  # must rewrite with builtin echo logic
-                os.system(command_full)
+            case "echo":
+                output_write = " ".join(params)
+                output_write = (
+                    output_write[1:-1]
+                    if (output_write.startswith('"') or output_write.startswith("'"))
+                    else output_write
+                )
+                if error_write:
+                    print(output_write)
+                    if state == 1:
+                        with open(output_file, "w") as file:
+                            pass
+                    else:
+                        with open(output_file, "a") as file:
+                            pass
+                else:
+                    if state == 1:
+                        with open(output_file, "w") as file:
+                            print(output_write, file=file)
+                    elif state == 2:
+                        with open(output_file, "a") as file:
+                            print(output_write, file=file)
+                    else:
+                        print(output_write)
             case "pwd":
                 print(os.getcwd())
             case "cd":
@@ -143,7 +192,21 @@ def main():
                     print(f"{arg_command}: not found")
             case _:
                 if command in BUILTINS:
-                    os.system(command_full)
+                    if state == 1:
+                        with open(output_file, "w") as file:
+                            if error_write:
+                                subprocess.run([command, *params], stderr=file)
+                            else:
+                                subprocess.run([command, *params], stdout=file)
+                    elif state == 2:
+                        with open(output_file, "a") as file:
+                            if error_write:
+                                subprocess.run([command, *params], stderr=file)
+                            else:
+                                subprocess.run([command, *params], stdout=file)
+                    else:
+                        subprocess.run([command, *params])
+
                 else:
                     print(f"{command}: command not found")
 
