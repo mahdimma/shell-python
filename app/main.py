@@ -115,11 +115,8 @@ def main():
         match command:
             case "exit":
                 break
-            case "echo":
-                if "1>" in params or "2>" in params or ">>" in params or ">" in params:
-                    os.system(command_full)
-                else:
-                    print(*params)
+            case "echo":  # must rewrite with builtin echo logic
+                os.system(command_full)
             case "pwd":
                 print(os.getcwd())
             case "cd":
