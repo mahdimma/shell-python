@@ -97,6 +97,29 @@ def completer(text, state):
         return None
 
 
+def param_parser(param: str) -> list:
+    params = []
+    word = ""
+    quote = False
+    while param.find("''") != -1:
+        param = param.replace("''", "")
+    for char in param:
+        if char == " " and not quote:
+            if word:
+                params.append(word)
+                word = ""
+        elif char in ['"', "'"]:
+            if quote:
+                params.append(word)
+                word = ""
+            quote = not quote
+        else:
+            word += char
+    if word:
+        params.append(word)
+    return params
+
+
 def command_parser(command_full):
     append = command_full.find(">>")
     redirection = command_full.find(">")
@@ -119,7 +142,7 @@ def command_parser(command_full):
     else:
         state = 0
         command = command_full
-    command, *params = command.split()
+    command, *params = param_parser(command)
     return command, output_file, state, error, *params
 
 
