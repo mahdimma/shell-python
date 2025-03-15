@@ -1,6 +1,7 @@
 import sys
 import os
 import readline
+import subprocess
 
 PATH_SEP = os.pathsep
 PATH = os.environ.get("PATH", "")
@@ -115,7 +116,10 @@ def main():
             case "exit":
                 break
             case "echo":
-                print(*params)
+                if "1>" in params or "2>" in params or ">>" in params or ">" in params:
+                    os.system(command_full)
+                else:
+                    print(*params)
             case "pwd":
                 print(os.getcwd())
             case "cd":
