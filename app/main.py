@@ -100,19 +100,25 @@ def completer(text, state):
 def param_parser(param: str) -> list:
     params = []
     word = ""
-    quote = False
-    while param.find("''") != -1:
-        param = param.replace("''", "")
+    single_quote = False
+    dobule_quote = False
+    param = param.replace("''", "")
+    param = param.replace('""', "")
     for char in param:
-        if char == " " and not quote:
+        if char == " " and not (single_quote or dobule_quote):
             if word:
                 params.append(word)
                 word = ""
-        elif char in ['"', "'"]:
-            if quote:
+        elif char == "'" and not dobule_quote:
+            if single_quote:
                 params.append(word)
                 word = ""
-            quote = not quote
+            single_quote = not single_quote
+        elif char == '"' and not single_quote:
+            if dobule_quote:
+                params.append(word)
+                word = ""
+            dobule_quote = not dobule_quote
         else:
             word += char
     if word:
