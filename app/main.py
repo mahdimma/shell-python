@@ -109,7 +109,7 @@ def param_parser(param: str) -> list:
         if back_slash:
             word += char
             back_slash = False
-        if char == " " and not (single_quote or dobule_quote):
+        elif char == " " and not (single_quote or dobule_quote):
             if word:
                 params.append(word)
                 word = ""
