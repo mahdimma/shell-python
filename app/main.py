@@ -179,11 +179,6 @@ def main():
                 break
             case "echo":
                 output_write = " ".join(params)
-                output_write = (
-                    output_write[1:-1]
-                    if (output_write.startswith('"') or output_write.startswith("'"))
-                    else output_write
-                )
                 if error_write:
                     print(output_write)
                     if state == 1:
