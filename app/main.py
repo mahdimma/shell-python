@@ -110,6 +110,8 @@ def param_parser(param: str) -> list:
             if dobule_quote:
                 if char == '"' or char == "\\" or char == "$":
                     word += char
+                # elif char == "n":
+                #     word += "\n"
                 else:
                     word += "\\" + char
             else:
