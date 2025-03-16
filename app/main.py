@@ -105,25 +105,35 @@ def param_parser(param: str) -> list:
     back_slash = False
     param = param.replace("''", "")
     param = param.replace('""', "")
-    for char in param:
+    for index, char in enumerate(param):
         if back_slash:
-            word += char
+            if dobule_quote:
+                if char == '"' or char == "\\" or char == "$":
+                    word += char
+                else:
+                    word += "\\" + char
+            else:
+                word += char
             back_slash = False
         elif char == " " and not (single_quote or dobule_quote):
             if word:
                 params.append(word)
                 word = ""
         elif char == "'" and not dobule_quote:
-            if single_quote:
+            if index < len(param) - 1 and param[index + 1] != " ":
+                pass
+            elif single_quote:
                 params.append(word)
                 word = ""
             single_quote = not single_quote
         elif char == '"' and not single_quote:
-            if dobule_quote:
+            if index < len(param) - 1 and param[index + 1] != " ":
+                pass
+            elif dobule_quote:
                 params.append(word)
                 word = ""
             dobule_quote = not dobule_quote
-        elif char == "\\" and not (single_quote or dobule_quote):
+        elif char == "\\" and not single_quote:
             back_slash = True
         else:
             word += char
